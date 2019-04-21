@@ -41,19 +41,31 @@ void Winch::up(){
 
 void Winch::down(){
   bool upDidDeactivate = false;
-  _servo.write(-180);
-  for(int i = 0; true; i++){ 
-    upDidDeactivate = upDidDeactivate || digitalRead(_upPin) != LOW;
-    if(upDidDeactivate && digitalRead(_upPin) == LOW || i >= 20){ // 20 times through delay(200) is 4 seconds
-      Serial.println("Abort!");
-      _stop();
-      i = 0;
-      _servo.write(180);
+  _servo.write(0);
+  while(true){ 
+
+    // error correction:
+    upDidDeactivate = upDidDeactivate || digitalRead(_upPin) != LOW; // if truthy stay truthy
+    if(upDidDeactivate && digitalRead(_upPin) == LOW){
+      if(Serial){
+        Serial.println("Abort!");
+      }
+      upDidDeactivate = false;
+      _servo.write(180 - _servo.read());
     }
+    
     if(digitalRead(_downPin) == LOW){
       break;
     }
     delay(200);
   }
   _stop();
+}
+
+void Winch::toggle(){
+  if(isDown() == true){
+    up();
+  }else if(isDown() == false){
+    down();
+  }
 }
